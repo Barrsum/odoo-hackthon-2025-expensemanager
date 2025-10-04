@@ -19,6 +19,7 @@ import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import UserManagementPage from './pages/UserManagementPage';
 import ManagerAssignmentPage from './pages/ManagerAssignmentPage'; 
+import ApprovalsPage from './pages/ApprovalsPage';
 
 function App() {
   return (
@@ -46,6 +47,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/manage-users" element={<UserManagementPage />} />
             <Route path="/manage-managers" element={<ManagerAssignmentPage />} />
+            <Route path="/approvals" element={<ApprovalsPage />} />
           </Route>
         </Route>
       </Routes>

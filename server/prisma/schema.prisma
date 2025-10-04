@@ -57,6 +57,9 @@ model ApprovalStep {
   status    Status   @default(PENDING)
   step      Int
   comment   String?
+
+  createdAt DateTime @default(now()) // Should be here
+  updatedAt DateTime @updatedAt     // Should be here
 }
 
 enum Role {

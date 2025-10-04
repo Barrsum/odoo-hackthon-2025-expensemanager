@@ -108,17 +108,97 @@ app.post('/api/auth/login', async (req, res) => {
 app.get('/api/users', protect, async (req, res) => {
   try {
     const users = await prisma.user.findMany({
-      select: { 
-        id: true, 
-        name: true, 
-        email: true, 
-        role: true, 
-        managerId: true // <-- THIS IS THE FIX. We now send the manager relationship.
-      }, 
+      select: { id: true, name: true, email: true, role: true, managerId: true },
     });
     res.json(users);
+  } catch (error) { res.status(500).json({ error: 'Failed to fetch users' }); }
+});
+
+app.get('/api/approvals', protect, async (req, res) => {
+  try {
+    const { userId, role } = req.user;
+    const whereClause = role === 'ADMIN' ? { status: 'PENDING' } : { approverId: userId, status: 'PENDING' };
+    const approvals = await prisma.approvalStep.findMany({
+      where: whereClause,
+      include: { expense: { include: { submitter: { select: { name: true, email: true } } } } },
+      orderBy: { expense: { date: 'desc' } },
+    });
+    res.json(approvals);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch users' });
+    console.error("Fetch approvals error:", error);
+    res.status(500).json({ error: 'Failed to fetch approvals.' });
+  }
+});
+
+app.get('/api/approvals/history', protect, async (req, res) => {
+  try {
+    const { userId, role } = req.user;
+    const whereClause = role === 'ADMIN'
+      ? { status: { in: ['APPROVED', 'REJECTED'] } }
+      : { approverId: userId, status: { in: ['APPROVED', 'REJECTED'] } };
+
+    const history = await prisma.approvalStep.findMany({
+      where: whereClause,
+      select: {
+        id: true, status: true, updatedAt: true,
+        expense: { select: { description: true, amount: true, currency: true, date: true, submitter: { select: { name: true } } } },
+      },
+      orderBy: { updatedAt: 'desc' }, // THIS WILL NOW WORK
+    });
+    res.json(history);
+  } catch (error) {
+    console.error("Fetch history error:", error);
+    res.status(500).json({ error: 'Failed to fetch approval history.' });
+  }
+});
+
+app.get('/api/expenses/my', protect, async (req, res) => {
+  try {
+    const expenses = await prisma.expense.findMany({
+      where: { submitterId: req.user.userId },
+      orderBy: { date: 'desc' },
+    });
+    res.json(expenses);
+  } catch (error) {
+    console.error("Fetch my expenses error:", error);
+    res.status(500).json({ error: 'Failed to fetch your expenses.' });
+  }
+});
+
+// POST to approve or reject an expense
+app.post('/api/approvals/:stepId', protect, async (req, res) => {
+  try {
+    const { stepId } = req.params;
+    const { status } = req.body; // Expecting 'APPROVED' or 'REJECTED'
+    const { userId, role } = req.user;
+
+    if (status !== 'APPROVED' && status !== 'REJECTED') {
+      return res.status(400).json({ error: 'Invalid status provided.' });
+    }
+
+    const approvalStep = await prisma.approvalStep.findUnique({ where: { id: stepId } });
+
+    // Security check: ensure the user is the assigned approver or an admin
+    if (role !== 'ADMIN' && approvalStep.approverId !== userId) {
+      return res.status(403).json({ error: 'You are not authorized to action this approval.' });
+    }
+
+    // Use a transaction to update the step and the parent expense
+    const [, updatedExpense] = await prisma.$transaction([
+      prisma.approvalStep.update({
+        where: { id: stepId },
+        data: { status },
+      }),
+      prisma.expense.update({
+        where: { id: approvalStep.expenseId },
+        data: { status }, // The whole expense gets the same status
+      }),
+    ]);
+    
+    res.json(updatedExpense);
+  } catch (error) {
+    console.error("Action approval error:", error);
+    res.status(500).json({ error: 'Failed to action approval.' });
   }
 });
 
