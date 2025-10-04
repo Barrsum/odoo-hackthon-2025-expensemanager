@@ -1,39 +1,71 @@
 // client/src/pages/LoginPage.jsx
-// This is a placeholder for now. We will add form logic later.
-import { Link } from "react-router-dom";
+
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import axios from "axios";
+import { toast } from "sonner";
+import { useNavigate, Link } from "react-router-dom";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
+const formSchema = z.object({
+  email: z.string().email("Invalid email address."),
+  password: z.string().min(1, "Password is required."),
+});
 
 const LoginPage = () => {
+  const navigate = useNavigate();
+  const form = useForm({
+    resolver: zodResolver(formSchema),
+    defaultValues: { email: "", password: "" },
+  });
+
+  const onSubmit = async (values) => {
+    const promise = axios.post("http://localhost:3001/api/auth/login", values);
+    toast.promise(promise, {
+      loading: 'Logging in...',
+      success: (response) => {
+        localStorage.setItem('authToken', response.data.token);
+        navigate('/dashboard');
+        return `Welcome back, ${response.data.user.name}!`;
+      },
+      error: (error) => error.response?.data?.error || "Login failed. Please try again.",
+    });
+  };
+
   return (
-    <Card className="w-full max-w-md bg-card/50 backdrop-blur-lg border border-border/20">
+    <Card className="w-full max-w-md auth-card">
       <CardHeader>
         <CardTitle className="text-2xl">Welcome Back</CardTitle>
-        <CardDescription>Enter your email below to login to your account.</CardDescription>
+        <CardDescription>Enter your email and password to access your account.</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" type="email" placeholder="m@example.com" required />
-          </div>
-          <div className="grid gap-2">
-            <div className="flex items-center">
-              <Label htmlFor="password">Password</Label>
-            </div>
-            <Input id="password" type="password" required />
-          </div>
-          <Button type="submit" className="w-full">
-            Login
-          </Button>
-        </div>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField control={form.control} name="email" render={({ field }) => ( 
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl><Input type="email" placeholder="john.doe@company.com" {...field} autoComplete="email" /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <FormField control={form.control} name="password" render={({ field }) => ( 
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl><Input type="password" placeholder="••••••••" {...field} autoComplete="current-password" /></FormControl>
+                <FormMessage />
+              </FormItem>
+            )} />
+            <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>Login</Button>
+          </form>
+        </Form>
         <div className="mt-4 text-center text-sm">
-          Don&apos;t have an account?{" "}
-          <Link to="/signup" className="underline">
-            Sign up
-          </Link>
+          Don't have an account?{" "}
+          <Link to="/signup" className="underline">Sign up</Link>
         </div>
       </CardContent>
     </Card>

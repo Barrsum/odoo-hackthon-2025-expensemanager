@@ -8,7 +8,7 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
+    --background: 210 40% 98%; 
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -29,6 +29,7 @@
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem
   }
+
   .dark {
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
@@ -50,29 +51,35 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
   }
-}
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-    position: relative;
-    min-height: 100vh;
-  }
-  
-  /* This is our magic background! */
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+
   body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-image: radial-gradient(circle at 20% 20%, hsl(var(--primary) / 0.1), transparent 30%),
-                      radial-gradient(circle at 80% 70%, hsl(var(--secondary) / 0.1), transparent 30%);
-    z-index: -1; /* Place it behind all content */
+    content: ''; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background-image: radial-gradient(circle at 10% 20%, hsl(var(--primary) / 0.15), transparent 40%),
+                      radial-gradient(circle at 90% 80%, hsl(var(--destructive) / 0.1), transparent 40%);
+    z-index: -1;
     opacity: 0.5;
+    @apply dark:opacity-100;
+  }
+
+  .auth-card, .dashboard-card {
+    position: relative;
+    overflow: hidden;
+    @apply bg-card/95 border border-border/50 shadow-lg shadow-black/[0.03];
+    @apply dark:bg-card/75 dark:backdrop-blur-lg dark:shadow-inner dark:shadow-white/5 dark:border-transparent;
+  }
+
+  .auth-card::before, .dashboard-card::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    background: linear-gradient(to bottom right, hsl(var(--primary)/0.3), hsl(var(--secondary)/0.3)) border-box;
+    -webkit-mask: linear-gradient(#fff 0 0) padding-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: destination-out;
+    mask-composite: exclude;
+    z-index: -1; /* <<< --- THIS IS THE CRITICAL FIX --- */
+    @apply hidden dark:block;
   }
 }

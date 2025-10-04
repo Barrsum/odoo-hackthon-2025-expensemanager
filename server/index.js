@@ -77,6 +77,59 @@ app.post('/api/auth/signup', async (req, res) => {
   }
 });
 
+// 2. LOGIN: Authenticate a user and return a JWT
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    // --- Validation ---
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required.' });
+    }
+
+    // --- Find the user by email ---
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      // Use a generic error message for security
+      return res.status(401).json({ error: 'Invalid credentials.' });
+    }
+
+    // --- Compare the provided password with the stored hash ---
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return res.status(401).json({ error: 'Invalid credentials.' });
+    }
+
+    // --- If credentials are valid, create a JSON Web Token (JWT) ---
+    const token = jwt.sign(
+      { 
+        userId: user.id,
+        email: user.email,
+        role: user.role,
+        companyId: user.companyId
+      },
+      JWT_SECRET,
+      { expiresIn: '8h' } // Token will be valid for 8 hours
+    );
+
+    // --- Respond with the token and user info ---
+    res.status(200).json({
+      message: 'Login successful!',
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    });
+
+  } catch (error) {
+    console.error('Login Error:', error);
+    res.status(500).json({ error: 'An error occurred during login.' });
+  }
+});
+
 
 // Start the server
 const PORT = process.env.PORT || 3001;
