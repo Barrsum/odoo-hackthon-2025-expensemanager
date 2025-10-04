@@ -17,7 +17,7 @@ const ManagerAssignmentPage = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('authToken');
-      const res = await axios.get('http://localhost:3001/api/users', {
+      const res = await axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -37,7 +37,7 @@ const ManagerAssignmentPage = () => {
     const successMsg = managerId ? 'Manager assigned successfully!' : 'Manager unassigned successfully!';
     
     const promise = axios.put(
-      `http://localhost:3001/api/users/${employeeId}/assign-manager`,
+      `https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/users/${employeeId}/assign-manager`,
       { managerId: managerId },
       { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } }
     ).then(() => fetchUsers());

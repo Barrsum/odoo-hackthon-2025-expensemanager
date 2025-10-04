@@ -109,7 +109,7 @@ export const SubmitExpenseDialog = ({ open, onOpenChange, onExpenseAdded }) => {
     const promise = () => new Promise(async (resolve, reject) => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await axios.post('http://localhost:3001/api/expenses', values, {
+        const response = await axios.post('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/expenses', values, {
           headers: { Authorization: `Bearer ${token}` }
         });
         handleOpenChange(false);

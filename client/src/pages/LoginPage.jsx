@@ -27,7 +27,7 @@ const LoginPage = () => {
   });
 
   const onSubmit = async (values) => {
-    const promise = axios.post("http://localhost:3001/api/auth/login", values);
+    const promise = axios.post("https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/auth/login", values);
     toast.promise(promise, {
       loading: 'Logging in...',
       success: (response) => {

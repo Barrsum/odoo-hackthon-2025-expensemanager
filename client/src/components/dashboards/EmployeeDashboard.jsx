@@ -7,7 +7,7 @@ import { StatCard } from './StatCard';
 export const EmployeeDashboard = () => {
   const [stats, setStats] = useState({});
   // ... (useEffect to fetch stats is the same as AdminDashboard) ...
-  useEffect(() => { const fetchStats = async () => { const token = localStorage.getItem('authToken'); const res = await axios.get('http://localhost:3001/api/dashboard-stats', { headers: { Authorization: `Bearer ${token}` } }); setStats(res.data); }; fetchStats(); }, []);
+  useEffect(() => { const fetchStats = async () => { const token = localStorage.getItem('authToken'); const res = await axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/dashboard-stats', { headers: { Authorization: `Bearer ${token}` } }); setStats(res.data); }; fetchStats(); }, []);
   
   const approvalRate = stats.totalSubmitted > 0 ? (stats.totalApproved / stats.totalSubmitted) * 100 : 0;
 

@@ -10,7 +10,7 @@ export const AdminDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       const token = localStorage.getItem('authToken');
-      const res = await axios.get('http://localhost:3001/api/dashboard-stats', {
+      const res = await axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/dashboard-stats', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setStats(res.data);

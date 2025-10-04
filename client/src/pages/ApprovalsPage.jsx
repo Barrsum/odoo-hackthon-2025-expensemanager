@@ -134,8 +134,8 @@ const ApprovalsPage = () => {
         const token = localStorage.getItem('authToken');
         const headers = { Authorization: `Bearer ${token}` };
         const [pendingRes, historyRes] = await Promise.all([
-          axios.get('http://localhost:3001/api/approvals', { headers }),
-          axios.get('http://localhost:3001/api/approvals/history', { headers }),
+          axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/approvals', { headers }),
+          axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/approvals/history', { headers }),
         ]);
         setPending(pendingRes.data);
         setHistory(historyRes.data);
@@ -172,7 +172,7 @@ const ApprovalsPage = () => {
     };
 
     const handleReject = (stepId) => {
-        const promise = axios.post( `http://localhost:3001/api/approvals/${stepId}`, { status: 'REJECTED' }, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } } ).then(() => fetchData());
+        const promise = axios.post( `https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/approvals/${stepId}`, { status: 'REJECTED' }, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } } ).then(() => fetchData());
         toast.promise(promise, { loading: 'Rejecting expense...', success: 'Expense Rejected!', error: 'Action failed.' });
     };
 
@@ -186,7 +186,7 @@ const ApprovalsPage = () => {
                 return;
             }
         }
-        const promise = axios.post( `http://localhost:3001/api/approvals/${selectedApproval.id}`, { status: 'APPROVED', approvedAmount: finalApprovedAmount }, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } } ).then(() => {
+        const promise = axios.post( `https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/approvals/${selectedApproval.id}`, { status: 'APPROVED', approvedAmount: finalApprovedAmount }, { headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` } } ).then(() => {
             fetchData();
             resetDialogState();
         });

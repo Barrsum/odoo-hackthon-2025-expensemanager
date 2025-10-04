@@ -36,7 +36,7 @@ const UserManagementPage = () => {
     setLoading(true);
     try {
       const token = localStorage.getItem('authToken');
-      const res = await axios.get('http://localhost:3001/api/users', {
+      const res = await axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/users', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(res.data);
@@ -56,7 +56,7 @@ const UserManagementPage = () => {
     const promise = () => new Promise(async (resolve, reject) => {
       try {
         const token = localStorage.getItem('authToken');
-        await axios.put(`http://localhost:3001/api/users/${userId}`, { role: newRole }, {
+        await axios.put(`https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/users/${userId}`, { role: newRole }, {
           headers: { Authorization: `Bearer ${token}` },
         });
         await fetchUsers();
@@ -77,7 +77,7 @@ const UserManagementPage = () => {
     const promise = () => new Promise(async (resolve, reject) => {
       try {
         const token = localStorage.getItem('authToken');
-        await axios.post('http://localhost:3001/api/users', data, {
+        await axios.post('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/users', data, {
           headers: { Authorization: `Bearer ${token}` }
         });
         await fetchUsers();

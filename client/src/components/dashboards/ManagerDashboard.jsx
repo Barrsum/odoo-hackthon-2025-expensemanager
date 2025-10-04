@@ -11,7 +11,7 @@ const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff8042', '#00C49F'];
 export const ManagerDashboard = () => {
   const [stats, setStats] = useState({});
   // ... (useEffect to fetch stats is the same as AdminDashboard) ...
-  useEffect(() => { const fetchStats = async () => { const token = localStorage.getItem('authToken'); const res = await axios.get('http://localhost:3001/api/dashboard-stats', { headers: { Authorization: `Bearer ${token}` } }); setStats(res.data); }; fetchStats(); }, []);
+  useEffect(() => { const fetchStats = async () => { const token = localStorage.getItem('authToken'); const res = await axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/dashboard-stats', { headers: { Authorization: `Bearer ${token}` } }); setStats(res.data); }; fetchStats(); }, []);
 
   return (
     <div className="space-y-4">

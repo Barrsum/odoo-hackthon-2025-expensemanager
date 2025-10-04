@@ -32,7 +32,7 @@ const MyExpensesPage = () => {
     const fetchMyExpenses = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const res = await axios.get('http://localhost:3001/api/expenses/my', {
+        const res = await axios.get('https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/expenses/my', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setExpenses(res.data);

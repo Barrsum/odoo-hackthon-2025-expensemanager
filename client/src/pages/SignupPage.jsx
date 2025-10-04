@@ -29,7 +29,7 @@ const SignupPage = () => {
   });
 
   const onSubmit = async (values) => {
-    const promise = axios.post("http://localhost:3001/api/auth/signup", values);
+    const promise = axios.post("https://odoo-hackthon-2025-expensemanager-app.onrender.com/api/auth/signup", values);
     toast.promise(promise, {
       loading: 'Creating your account...',
       success: (response) => {
