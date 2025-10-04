@@ -20,6 +20,7 @@ import DashboardPage from './pages/DashboardPage'
 import UserManagementPage from './pages/UserManagementPage';
 import ManagerAssignmentPage from './pages/ManagerAssignmentPage'; 
 import ApprovalsPage from './pages/ApprovalsPage';
+import MyExpensesPage from './pages/MyExpensesPage';
 
 function App() {
   return (
@@ -48,6 +49,7 @@ function App() {
             <Route path="/manage-users" element={<UserManagementPage />} />
             <Route path="/manage-managers" element={<ManagerAssignmentPage />} />
             <Route path="/approvals" element={<ApprovalsPage />} />
+            <Route path="/my-expenses" element={<MyExpensesPage />} />
           </Route>
         </Route>
       </Routes>

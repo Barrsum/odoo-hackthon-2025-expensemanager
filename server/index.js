@@ -141,9 +141,18 @@ app.get('/api/approvals/history', protect, async (req, res) => {
       where: whereClause,
       select: {
         id: true, status: true, updatedAt: true,
-        expense: { select: { description: true, amount: true, currency: true, date: true, submitter: { select: { name: true } } } },
+        expense: { 
+          select: { 
+            description: true, 
+            amount: true, 
+            approvedAmount: true, // <-- THIS IS THE CHANGE
+            currency: true, 
+            date: true, 
+            submitter: { select: { name: true } } 
+          } 
+        },
       },
-      orderBy: { updatedAt: 'desc' }, // THIS WILL NOW WORK
+      orderBy: { updatedAt: 'desc' },
     });
     res.json(history);
   } catch (error) {
@@ -165,25 +174,83 @@ app.get('/api/expenses/my', protect, async (req, res) => {
   }
 });
 
-// POST to approve or reject an expense
+app.get('/api/dashboard-stats', protect, async (req, res) => {
+  try {
+    const { userId, role } = req.user;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    let stats = {};
+
+    if (role === 'ADMIN') {
+      const users = await prisma.user.count();
+      const pendingExpenses = await prisma.expense.aggregate({ where: { status: 'PENDING' }, _sum: { amount: true } });
+      const approvedThisMonth = await prisma.expense.aggregate({
+        where: { status: 'APPROVED', updatedAt: { gte: startOfMonth } }, // Now works!
+        _sum: { approvedAmount: true },
+      });
+      stats = {
+        totalUsers: users,
+        pendingAmount: pendingExpenses._sum.amount || 0,
+        approvedThisMonth: approvedThisMonth._sum.approvedAmount || 0,
+      };
+    } else if (role === 'MANAGER') {
+      const reports = await prisma.user.findMany({ where: { managerId: userId }, select: { id: true } });
+      const reportIds = reports.map(r => r.id);
+      
+      const pendingForTeam = await prisma.expense.aggregate({ where: { submitterId: { in: reportIds }, status: 'PENDING' }, _sum: { amount: true } });
+      const approvedForTeamThisMonth = await prisma.expense.aggregate({ where: { submitterId: { in: reportIds }, status: 'APPROVED', updatedAt: { gte: startOfMonth } }, _sum: { approvedAmount: true } }); // Now works!
+      const expensesByCategory = await prisma.expense.groupBy({ by: ['category'], where: { submitterId: { in: reportIds } }, _sum: { amount: true } });
+
+      stats = {
+        teamSize: reportIds.length,
+        pendingTeamAmount: pendingForTeam._sum.amount || 0,
+        approvedTeamThisMonth: approvedForTeamThisMonth._sum.approvedAmount || 0,
+        expensesByCategory: expensesByCategory.map(item => ({ name: item.category, value: item._sum.amount })),
+      };
+    } else { // EMPLOYEE
+      const myExpenses = await prisma.expense.aggregate({ where: { submitterId: userId }, _sum: { amount: true, approvedAmount: true } });
+      const myPending = await prisma.expense.count({ where: { submitterId: userId, status: 'PENDING' } });
+
+      stats = {
+        totalSubmitted: myExpenses._sum.amount || 0,
+        totalApproved: myExpenses._sum.approvedAmount || 0,
+        pendingCount: myPending,
+      };
+    }
+    res.json(stats);
+  } catch (error) {
+    console.error("Dashboard stats error:", error);
+    res.status(500).json({ error: 'Failed to fetch dashboard stats.' });
+  }
+});
+
+// POST to approve or reject an expense (NOW WITH PARTIAL APPROVAL)
 app.post('/api/approvals/:stepId', protect, async (req, res) => {
   try {
     const { stepId } = req.params;
-    const { status } = req.body; // Expecting 'APPROVED' or 'REJECTED'
+    const { status, approvedAmount } = req.body; // Can now receive an approved amount
     const { userId, role } = req.user;
 
     if (status !== 'APPROVED' && status !== 'REJECTED') {
       return res.status(400).json({ error: 'Invalid status provided.' });
     }
 
-    const approvalStep = await prisma.approvalStep.findUnique({ where: { id: stepId } });
+    const approvalStep = await prisma.approvalStep.findUnique({ 
+      where: { id: stepId },
+      include: { expense: true } // We need the original expense amount
+    });
 
-    // Security check: ensure the user is the assigned approver or an admin
     if (role !== 'ADMIN' && approvalStep.approverId !== userId) {
       return res.status(403).json({ error: 'You are not authorized to action this approval.' });
     }
 
-    // Use a transaction to update the step and the parent expense
+    let finalApprovedAmount = null;
+    if (status === 'APPROVED') {
+      // If an approvedAmount is provided, use it. Otherwise, use the full original amount.
+      finalApprovedAmount = approvedAmount ? parseFloat(approvedAmount) : approvalStep.expense.amount;
+    }
+
     const [, updatedExpense] = await prisma.$transaction([
       prisma.approvalStep.update({
         where: { id: stepId },
@@ -191,7 +258,10 @@ app.post('/api/approvals/:stepId', protect, async (req, res) => {
       }),
       prisma.expense.update({
         where: { id: approvalStep.expenseId },
-        data: { status }, // The whole expense gets the same status
+        data: { 
+          status,
+          approvedAmount: finalApprovedAmount // Store the final approved amount
+        },
       }),
     ]);
     

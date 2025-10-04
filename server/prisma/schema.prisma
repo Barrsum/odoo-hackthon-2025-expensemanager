@@ -41,6 +41,10 @@ model Expense {
   category    String
   date        DateTime
   status      Status   @default(PENDING)
+  approvedAmount Float?
+
+  createdAt DateTime @default(now()) // <-- ADD THIS LINE
+  updatedAt DateTime @updatedAt     // <-- ADD THIS LINE
 
   submitter   User     @relation("submittedBy", fields: [submitterId], references: [id])
   submitterId String

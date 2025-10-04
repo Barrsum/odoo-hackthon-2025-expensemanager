@@ -24,8 +24,9 @@ const DashboardLayout = () => {
           <nav className="flex items-center gap-4 text-sm text-muted-foreground">
             <Link to="/dashboard" className="transition-colors hover:text-foreground">Dashboard</Link>
             {user && (user.role === 'ADMIN' || user.role === 'MANAGER') && (
-              <Link to="/approvals" className="transition-colors hover:text-foreground">Approvals</Link>
+                <Link to="/approvals" className="transition-colors hover:text-foreground">Approvals</Link>
             )}
+            <Link to="/my-expenses" className="transition-colors hover:text-foreground">My Expenses</Link>
             {user && user.role === 'ADMIN' && (
               <>
                 <Link to="/manage-users" className="transition-colors hover:text-foreground">Users</Link>
