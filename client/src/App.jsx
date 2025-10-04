@@ -16,6 +16,7 @@ import LandingPage from './pages/LandingPage'
 import SignupPage from './pages/SignupPage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
+import UserManagementPage from './pages/UserManagementPage';
 
 function App() {
   return (
@@ -36,6 +37,7 @@ function App() {
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/manage-users" element={<UserManagementPage />} />
           </Route>
         </Route>
       </Routes>

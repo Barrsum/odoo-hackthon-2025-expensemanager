@@ -5,6 +5,7 @@ import cors from 'cors';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { protect } from './authMiddleware.js';
 
 // Initialize
 const app = express();
@@ -127,6 +128,39 @@ app.post('/api/auth/login', async (req, res) => {
   } catch (error) {
     console.error('Login Error:', error);
     res.status(500).json({ error: 'An error occurred during login.' });
+  }
+});
+
+// GET all users in the admin's company
+app.get('/api/users', protect, async (req, res) => {
+  try {
+    // req.user is available because of the 'protect' middleware
+    const users = await prisma.user.findMany({
+      where: { companyId: req.user.companyId },
+      select: { id: true, name: true, email: true, role: true }, // Don't send password!
+    });
+    res.json(users);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// PUT to update a user's role
+app.put('/api/users/:id', protect, async (req, res) => {
+  // Extra check: only an ADMIN can change roles
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Not authorized to perform this action' });
+  }
+
+  try {
+    const { role } = req.body;
+    const updatedUser = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { role },
+    });
+    res.json(updatedUser);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to update user role' });
   }
 });
 

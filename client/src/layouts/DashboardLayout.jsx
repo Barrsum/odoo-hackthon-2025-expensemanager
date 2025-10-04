@@ -1,6 +1,6 @@
 // client/src/layouts/DashboardLayout.jsx
 
-import { Outlet } from "react-router-dom";
+import { Outlet, Link } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 const DashboardLayout = () => {
@@ -11,6 +11,10 @@ const DashboardLayout = () => {
           <a href="/" className="font-bold">
             OdooExpense
           </a>
+          <nav className="flex items-center gap-4 text-sm text-muted-foreground">
+          <Link to="/dashboard" className="transition-colors hover:text-foreground">Dashboard</Link>
+          <Link to="/manage-users" className="transition-colors hover:text-foreground">Users</Link>
+        </nav>
           <ThemeToggle />
         </div>
       </header>

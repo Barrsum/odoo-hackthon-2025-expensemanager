@@ -33,7 +33,7 @@ const SignupPage = () => {
     toast.promise(promise, {
       loading: 'Creating your account...',
       success: (response) => {
-        setTimeout(() => navigate('/login'), 1500);
+        setTimeout(() => navigate('/dashboard'), 1500);
         return `Welcome, ${response.data.user.name}! Account created.`;
       },
       error: (error) => error.response?.data?.error || "Signup failed. Please try again.",
