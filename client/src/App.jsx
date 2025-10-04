@@ -1,20 +1,19 @@
 // client/src/App.jsx
-import { Button } from "@/components/ui/button"
+import { Route, Routes } from 'react-router-dom'
+import SignupPage from './pages/SignupPage' // We will create this next
+import { Toaster } from "@/components/ui/sonner"
 
 function App() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background">
-      <h1 className="text-4xl font-bold text-foreground mb-4">
-        Odoo Expense Management
-      </h1>
-      <p className="text-muted-foreground mb-8">
-        The "Super Duper Sexy" Vite + React App
-      </p>
-      <div className="flex gap-4">
-        <Button>Primary Button</Button>
-        <Button variant="secondary">Secondary Button</Button>
-      </div>
-    </div>
+    <>
+      <main>
+        <Routes>
+          <Route path="/signup" element={<SignupPage />} />
+          {/* We will add more routes here later, like /login and /dashboard */}
+        </Routes>
+      </main>
+      <Toaster richColors /> {/* This component will display our notifications */}
+    </>
   )
 }
 
