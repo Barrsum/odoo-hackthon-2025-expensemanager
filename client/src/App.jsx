@@ -1,18 +1,25 @@
 // client/src/App.jsx
 import { Route, Routes } from 'react-router-dom'
-import SignupPage from './pages/SignupPage' // We will create this next
+import SignupPage from './pages/SignupPage'
+import LoginPage from './pages/LoginPage'
+import HomePage from './pages/HomePage'
+import AuthLayout from './layouts/AuthLayout'
 import { Toaster } from "@/components/ui/sonner"
 
 function App() {
   return (
     <>
-      <main>
-        <Routes>
+      <Routes>
+        {/* Routes with the Glassmorphism Layout */}
+        <Route element={<AuthLayout />}>
+          <Route path="/login" element={<LoginPage />} />
           <Route path="/signup" element={<SignupPage />} />
-          {/* We will add more routes here later, like /login and /dashboard */}
-        </Routes>
-      </main>
-      <Toaster richColors /> {/* This component will display our notifications */}
+        </Route>
+
+        {/* Main App Routes (will have a different layout later) */}
+        <Route path="/" element={<HomePage />} />
+      </Routes>
+      <Toaster richColors theme="dark" />
     </>
   )
 }

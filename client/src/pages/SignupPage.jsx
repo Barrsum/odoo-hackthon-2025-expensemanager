@@ -63,7 +63,7 @@ const SignupPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-md bg-card/50 backdrop-blur-lg border border-border/20">
         <CardHeader>
           <CardTitle className="text-2xl">Create your Account</CardTitle>
           <CardDescription>Enter your details to get started with expense management.</CardDescription>
