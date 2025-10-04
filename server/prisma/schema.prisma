@@ -1,0 +1,72 @@
+// schema.prisma
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Company {
+  id        String @id @default(cuid())
+  name      String
+  currency  String
+  users     User[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      Role     @default(EMPLOYEE)
+  company   Company  @relation(fields: [companyId], references: [id])
+  companyId String
+
+  manager   User?    @relation("ManagerEmployee", fields: [managerId], references: [id])
+  managerId String?
+  reports   User[]   @relation("ManagerEmployee")
+
+  submittedExpenses  Expense[]      @relation("submittedBy")
+  approvalSteps      ApprovalStep[] @relation("approver")
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  description String
+  amount      Float
+  currency    String
+  category    String
+  date        DateTime
+  status      Status   @default(PENDING)
+
+  submitter   User     @relation("submittedBy", fields: [submitterId], references: [id])
+  submitterId String
+
+  approvalSteps ApprovalStep[]
+}
+
+model ApprovalStep {
+  id        String   @id @default(cuid())
+  expense   Expense  @relation(fields: [expenseId], references: [id])
+  expenseId String
+  approver  User     @relation("approver", fields: [approverId], references: [id])
+  approverId String
+  status    Status   @default(PENDING)
+  step      Int
+  comment   String?
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  EMPLOYEE
+}
+
+enum Status {
+  PENDING
+  APPROVED
+  REJECTED
+}
