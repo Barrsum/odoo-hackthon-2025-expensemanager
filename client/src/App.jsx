@@ -6,10 +6,11 @@ import { Toaster } from "@/components/ui/sonner"
 // Layouts
 import AuthLayout from './layouts/AuthLayout'
 import DashboardLayout from './layouts/DashboardLayout'
-import LandingPageLayout from './layouts/LandingPageLayout' // <-- Import new layout
+import LandingPageLayout from './layouts/LandingPageLayout'
 
 // Auth Components
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import PublicRoute from './components/auth/PublicRoute'
 
 // Pages
 import LandingPage from './pages/LandingPage'
@@ -17,27 +18,34 @@ import SignupPage from './pages/SignupPage'
 import LoginPage from './pages/LoginPage'
 import DashboardPage from './pages/DashboardPage'
 import UserManagementPage from './pages/UserManagementPage';
+import ManagerAssignmentPage from './pages/ManagerAssignmentPage'; 
 
 function App() {
   return (
     <>
       <Routes>
-        {/* Route 1: The Public Landing Page with its own layout */}
-        <Route element={<LandingPageLayout />}>
-          <Route path="/" element={<LandingPage />} />
+        {/* Public-only routes that logged-in users cannot see */}
+        <Route element={<PublicRoute />}>
+          
+          {/* Landing Page has its own dedicated layout */}
+          <Route element={<LandingPageLayout />}>
+            <Route path="/" element={<LandingPage />} />
+          </Route>
+          
+          {/* Auth Forms have the glassmorphism layout */}
+          <Route element={<AuthLayout />}>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/signup" element={<SignupPage />} />
+          </Route>
+
         </Route>
 
-        {/* Route 2: Public Auth Forms with the glassmorphism layout */}
-        <Route element={<AuthLayout />}>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
-        </Route>
-
-        {/* Route 3: Protected Dashboard Routes */}
+        {/* Protected routes that require login */}
         <Route element={<ProtectedRoute />}>
           <Route element={<DashboardLayout />}>
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/manage-users" element={<UserManagementPage />} />
+            <Route path="/manage-managers" element={<ManagerAssignmentPage />} />
           </Route>
         </Route>
       </Routes>
@@ -46,4 +54,4 @@ function App() {
   )
 }
 
-export default App
+export default App;

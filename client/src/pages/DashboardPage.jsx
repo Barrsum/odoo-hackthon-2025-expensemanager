@@ -1,19 +1,16 @@
-// client/src/pages/DashboardPage.jsx (Previously HomePage.jsx)
+// client/src/pages/DashboardPage.jsx
 
-import { Button } from "@/components/ui/button";
-
-const DashboardPage = () => { // <-- Name changed here
+const DashboardPage = () => {
   return (
     <div>
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold">Dashboard</h1>
-        <Button size="lg">Submit New Expense</Button>
-      </div>
+      <h1 className="text-3xl font-bold mb-8">Dashboard</h1>
+      
+      {/* This is a placeholder for the main content */}
       <div className="border-2 border-dashed border-border rounded-lg h-96 flex items-center justify-center">
-        <p className="text-muted-foreground">Dashboard content will go here...</p>
+        <p className="text-muted-foreground">Key metrics and recent expenses will be shown here...</p>
       </div>
     </div>
   );
 };
 
-export default DashboardPage; // <-- And here
+export default DashboardPage;

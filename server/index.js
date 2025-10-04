@@ -10,134 +10,111 @@ import { protect } from './authMiddleware.js';
 // Initialize
 const app = express();
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-hackathon'; // In a real app, use a .env variable
+const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-key-for-hackathon';
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// --- API ROUTES ---
+// --- AUTH ROUTES ---
 
-// 1. SIGNUP: Create a new Company and an Admin user
+// 1. SIGNUP (SIMPLIFIED)
+// No longer needs companyName or currency. Creates a default company.
 app.post('/api/auth/signup', async (req, res) => {
   try {
-    const { companyName, email, password, name, currency } = req.body;
-
-    // --- Validation ---
-    if (!companyName || !email || !password || !name || !currency) {
-      return res.status(400).json({ error: 'All fields are required.' });
+    const { email, password, name } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Name, email, and password are required.' });
     }
 
-    // --- Check if user already exists ---
     const existingUser = await prisma.user.findUnique({ where: { email } });
     if (existingUser) {
       return res.status(400).json({ error: 'User with this email already exists.' });
     }
 
-    // --- Hash the password ---
-    const hashedPassword = await bcrypt.hash(password, 10); // Hash with a salt of 10 rounds
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    // --- Create Company and User in a single transaction ---
-    // This ensures that if one part fails, the whole operation is rolled back.
+    // Create the user and a "Demo Company" at the same time
     const newUser = await prisma.user.create({
       data: {
         email,
         name,
         password: hashedPassword,
-        role: 'ADMIN', // The first user is always an ADMIN
+        role: 'ADMIN',
         company: {
           create: {
-            name: companyName,
-            currency: currency, // e.g., "USD"
+            name: `${name}'s Company`, // Auto-generates a company name
+            currency: 'INR', // Defaults to INR
           },
         },
       },
-      // Include company info in the response
-      include: {
-        company: true,
-      },
     });
 
-    // --- Respond with success ---
-    // We don't send the password back, even the hashed one.
+    // Create and return a token for immediate login
+    const token = jwt.sign(
+      { userId: newUser.id, email: newUser.email, role: newUser.role, companyId: newUser.companyId },
+      JWT_SECRET,
+      { expiresIn: '8h' }
+    );
+
     res.status(201).json({
       message: 'Company and Admin user created successfully!',
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        name: newUser.name,
-        role: newUser.role,
-        companyId: newUser.company.id,
-        companyName: newUser.company.name,
-      },
+      token,
+      user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role },
     });
-
   } catch (error) {
     console.error('Signup Error:', error);
     res.status(500).json({ error: 'An error occurred during signup.' });
   }
 });
 
-// 2. LOGIN: Authenticate a user and return a JWT
+// 2. LOGIN (No changes needed)
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-
-    // --- Validation ---
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password are required.' });
     }
-
-    // --- Find the user by email ---
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) {
-      // Use a generic error message for security
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
-    // --- Compare the provided password with the stored hash ---
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ error: 'Invalid credentials.' });
     }
 
-    // --- If credentials are valid, create a JSON Web Token (JWT) ---
     const token = jwt.sign(
-      { 
-        userId: user.id,
-        email: user.email,
-        role: user.role,
-        companyId: user.companyId
-      },
+      { userId: user.id, email: user.email, role: user.role, companyId: user.companyId },
       JWT_SECRET,
-      { expiresIn: '8h' } // Token will be valid for 8 hours
+      { expiresIn: '8h' }
     );
 
-    // --- Respond with the token and user info ---
     res.status(200).json({
       message: 'Login successful!',
       token,
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-      },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role },
     });
-
   } catch (error) {
     console.error('Login Error:', error);
     res.status(500).json({ error: 'An error occurred during login.' });
   }
 });
 
+// --- USER MANAGEMENT ROUTES (PROTECTED) ---
+
 // GET all users in the admin's company
 app.get('/api/users', protect, async (req, res) => {
   try {
-    // req.user is available because of the 'protect' middleware
     const users = await prisma.user.findMany({
-      where: { companyId: req.user.companyId },
-      select: { id: true, name: true, email: true, role: true }, // Don't send password!
+      select: { 
+        id: true, 
+        name: true, 
+        email: true, 
+        role: true, 
+        managerId: true // <-- THIS IS THE FIX. We now send the manager relationship.
+      }, 
     });
     res.json(users);
   } catch (error) {
@@ -147,11 +124,9 @@ app.get('/api/users', protect, async (req, res) => {
 
 // PUT to update a user's role
 app.put('/api/users/:id', protect, async (req, res) => {
-  // Extra check: only an ADMIN can change roles
   if (req.user.role !== 'ADMIN') {
     return res.status(403).json({ error: 'Not authorized to perform this action' });
   }
-
   try {
     const { role } = req.body;
     const updatedUser = await prisma.user.update({
@@ -164,6 +139,112 @@ app.put('/api/users/:id', protect, async (req, res) => {
   }
 });
 
+// POST to create a new user (by an Admin)
+app.post('/api/users', protect, async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Not authorized to perform this action' });
+  }
+  try {
+    const { name, email, password, role } = req.body;
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    const existingUser = await prisma.user.findUnique({ where: { email } });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists.' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role,
+        companyId: req.user.companyId,
+      },
+    });
+
+    res.status(201).json({
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// POST to create a new expense
+app.post('/api/expenses', protect, async (req, res) => {
+  try {
+    const { description, amount, currency, category, date } = req.body;
+    const submitterId = req.user.userId;
+
+    // 1. Find the person who submitted the expense to get their manager
+    const submitter = await prisma.user.findUnique({
+      where: { id: submitterId },
+      select: { managerId: true }
+    });
+
+    if (!submitter) {
+      return res.status(404).json({ error: 'Submitter not found.' });
+    }
+
+    // 2. Use a transaction to create the expense and approval step together
+    const newExpense = await prisma.expense.create({
+      data: {
+        description,
+        amount: parseFloat(amount),
+        currency,
+        category,
+        date: new Date(date),
+        submitterId: submitterId,
+        // If the user has a manager, create the first approval step immediately
+        approvalSteps: submitter.managerId ? {
+          create: [{
+            approverId: submitter.managerId,
+            step: 1,
+            status: 'PENDING',
+          }]
+        } : undefined, // If no manager, no approval steps are created
+      },
+      include: {
+        approvalSteps: true,
+      }
+    });
+
+    res.status(201).json(newExpense);
+  } catch (error) {
+    console.error("Expense submission error:", error);
+    res.status(500).json({ error: 'Failed to submit expense.' });
+  }
+});
+
+// PUT to assign a manager to an employee
+app.put('/api/users/:employeeId/assign-manager', protect, async (req, res) => {
+  if (req.user.role !== 'ADMIN') {
+    return res.status(403).json({ error: 'Not authorized.' });
+  }
+
+  try {
+    const { managerId } = req.body;
+    const { employeeId } = req.params;
+
+    // TODO: Add checks to ensure both users are in the same company
+    
+    const updatedEmployee = await prisma.user.update({
+      where: { id: employeeId },
+      data: { managerId: managerId },
+    });
+
+    res.json(updatedEmployee);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to assign manager.' });
+  }
+});
 
 // Start the server
 const PORT = process.env.PORT || 3001;

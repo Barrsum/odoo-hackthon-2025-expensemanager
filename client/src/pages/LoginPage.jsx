@@ -6,6 +6,7 @@ import * as z from "zod";
 import axios from "axios";
 import { toast } from "sonner";
 import { useNavigate, Link } from "react-router-dom";
+import { useAuth } from '@/context/AuthContext';
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ const formSchema = z.object({
 
 const LoginPage = () => {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: { email: "", password: "" },
@@ -29,7 +31,7 @@ const LoginPage = () => {
     toast.promise(promise, {
       loading: 'Logging in...',
       success: (response) => {
-        localStorage.setItem('authToken', response.data.token);
+        login(response.data.token);
         navigate('/dashboard');
         return `Welcome back, ${response.data.user.name}!`;
       },
@@ -47,18 +49,10 @@ const LoginPage = () => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField control={form.control} name="email" render={({ field }) => ( 
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl><Input type="email" placeholder="john.doe@company.com" {...field} autoComplete="email" /></FormControl>
-                <FormMessage />
-              </FormItem>
+              <FormItem><FormLabel>Email</FormLabel><FormControl><Input type="email" placeholder="john.doe@company.com" {...field} autoComplete="email" /></FormControl><FormMessage /></FormItem>
             )} />
             <FormField control={form.control} name="password" render={({ field }) => ( 
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl><Input type="password" placeholder="••••••••" {...field} autoComplete="current-password" /></FormControl>
-                <FormMessage />
-              </FormItem>
+              <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} autoComplete="current-password" /></FormControl><FormMessage /></FormItem>
             )} />
             <Button type="submit" className="w-full" disabled={form.formState.isSubmitting}>Login</Button>
           </form>
